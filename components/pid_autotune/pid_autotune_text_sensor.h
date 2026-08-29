@@ -4,16 +4,14 @@
 #include "esphome/core/component.h"
 #include "esphome/components/text_sensor/text_sensor.h"
 #include "esphome/components/pid/pid_climate.h"
+#include "esphome/components/pid/pid_autotuner.h"
 
 namespace esphome {
 namespace pid_autotune {
 
 namespace internal {
 
-// --- C++ Access Bypass Trick ---
-// Bypasses the 'protected' and 'final' modifiers using explicit template instantiation.
-// Kept in the internal namespace to avoid polluting the component namespace.
-
+// --- 1. Access Bypass Trick for PIDClimate (which is marked 'final') ---
 struct AutotunerTag {
   using type = std::unique_ptr<pid::PIDAutotuner> pid::PIDClimate::*;
 };
@@ -37,12 +35,31 @@ struct MemberExtractor {
 template <typename Tag, typename Tag::type P>
 typename MemberExtractor<Tag, P>::Filler MemberExtractor<Tag, P>::filler;
 
-// Force explicit instantiation to extract the protected member
 template class MemberExtractor<AutotunerTag, &pid::PIDClimate::autotuner_>;
+
+
+// --- 2. Access Bypass Trick for PIDAutotuner (not final) ---
+// Since the structs OscillationFrequencyDetector and OscillationAmplitudeDetector 
+// are protected types, we subclass to gain visibility, then form pointer-to-members.
+class AutotunerInspector : public pid::PIDAutotuner {
+public:
+  static bool is_successful(pid::PIDAutotuner* tuner) {
+    // Safely form pointer-to-members for the protected fields
+    auto freq_ptr = &AutotunerInspector::frequency_detector_;
+    auto amp_ptr  = &AutotunerInspector::amplitude_detector_;
+
+    // Apply them to the original base pointer
+    auto& freq = tuner->*freq_ptr;
+    auto& amp  = tuner->*amp_ptr;
+
+    // Check if the autotune genuinely converged
+    return freq.is_increase_decrease_symmetrical() && amp.is_amplitude_convergent();
+  }
+};
 
 }  // namespace internal
 
-// Renamed from PidAutotuneTextSensor to PIDAutotuneTextSensor to match ESPHome conventions
+
 class PIDAutotuneTextSensor : public text_sensor::TextSensor, public PollingComponent {
 protected:
   pid::PIDClimate *climate_{nullptr};
@@ -70,7 +87,12 @@ public:
 
     if (autotuner != nullptr) {
       if (autotuner->is_finished()) {
-        current_status = "Finished";
+        // Evaluate the detector properties to determine if it actually succeeded
+        if (internal::AutotunerInspector::is_successful(autotuner)) {
+          current_status = "Finished";
+        } else {
+          current_status = "Failed";
+        }
       } else {
         current_status = "Running";
       }

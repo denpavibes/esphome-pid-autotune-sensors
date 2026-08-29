@@ -20,9 +20,11 @@ text_sensor:
     name: "PID Autotune Status"
     climate_id: my_pid_climate
     update_interval: 5s
+```
 
 ### States
 The sensor will report one of the following states to Home Assistant:
 * **Off**: Autotune is not running.
 * **Running**: Autotune is currently in progress.
-* **Finished**: Autotune has completed successfully.
+* **Finished**: Autotune completed successfully (data was convergent and symmetrical).
+* **Failed**: Autotune finished, but failed to reach amplitude convergence or symmetry.
