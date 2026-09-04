@@ -131,5 +131,49 @@ public:
   }
 };
 
+// --- Switch: Autotune Toggle ---
+class PIDAutotuneSwitch : public switch_::Switch, public PollingComponent {
+protected:
+  pid::PIDClimate *climate_{nullptr};
+
+public:
+  void set_climate(pid::PIDClimate *climate) { climate_ = climate; }
+
+  void write_state(bool state) override {
+    if (this->climate_ == nullptr) {
+      this->mark_failed();
+      return;
+    };
+
+    if (state) {
+      auto tuner = std::make_unique<pid::PIDAutotuner>();
+      this->climate_->start_autotune(std::move(tuner));
+    } else {
+      auto ptr_to_member = internal::MemberStorage<internal::AutotunerTag>::ptr;
+      (this->climate_->*ptr_to_member).reset();
+    }
+
+    this->publish_state(state);
+  }
+
+  void update() override {
+    if (this->climate_ == nullptr) {
+      this->mark_failed();
+      return;
+    }
+
+    auto ptr_to_member = internal::MemberStorage<internal::AutotunerTag>::ptr;
+    auto &autotuner_ptr = this->climate_->*ptr_to_member;
+    pid::PIDAutotuner *autotuner = autotuner_ptr.get();
+
+    // The switch should be ON if the autotuner exists and hasn't finished
+    bool is_running = (autotuner != nullptr && !autotuner->is_finished());
+
+    if (this->state != is_running) {
+      this->publish_state(is_running);
+    }
+  }
+};
+
 }  // namespace pid_autotune
 }  // namespace esphome
