@@ -14,6 +14,9 @@ PIDAutotuneSwitch = pid_autotune_ns.class_(
 )
 
 CONF_CLIMATE_ID = "climate_id"
+CONF_NOISEBAND = "noiseband"
+CONF_POSITIVE_OUTPUT = "positive_output"
+CONF_NEGATIVE_OUTPUT = "negative_output"
 
 CONFIG_SCHEMA = (
     switch.switch_schema(
@@ -24,6 +27,9 @@ CONFIG_SCHEMA = (
     .extend(
         {
             cv.Required(CONF_CLIMATE_ID): cv.use_id(PIDClimate),
+            cv.Optional(CONF_NOISEBAND, default=0.25): cv.float_,
+            cv.Optional(CONF_POSITIVE_OUTPUT, default=1.0): cv.float_,
+            cv.Optional(CONF_NEGATIVE_OUTPUT, default=-1.0): cv.float_,
         }
     )
     .extend(cv.polling_component_schema("5s"))
@@ -36,3 +42,6 @@ async def to_code(config):
 
     climate_ = await cg.get_variable(config[CONF_CLIMATE_ID])
     cg.add(var.set_climate(climate_))
+    cg.add(var.set_noiseband(config[CONF_NOISEBAND]))
+    cg.add(var.set_positive_output(config[CONF_POSITIVE_OUTPUT]))
+    cg.add(var.set_negative_output(config[CONF_NEGATIVE_OUTPUT]))

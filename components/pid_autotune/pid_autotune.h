@@ -135,20 +135,30 @@ public:
 class PIDAutotuneSwitch : public switch_::Switch, public PollingComponent {
 protected:
   pid::PIDClimate *climate_{nullptr};
+  float noiseband_{0.25f};
+  float positive_output_{1.0f};
+  float negative_output_{-1.0f};
 
 public:
   void set_climate(pid::PIDClimate *climate) { climate_ = climate; }
+  void set_noiseband(float noiseband) { noiseband_ = noiseband; }
+  void set_positive_output(float positive_output) { positive_output_ = positive_output; }
+  void set_negative_output(float negative_output) { negative_output_ = negative_output; }
 
   void write_state(bool state) override {
     if (this->climate_ == nullptr) {
       this->mark_failed();
       return;
-    };
+    }
 
     if (state) {
       auto tuner = std::make_unique<pid::PIDAutotuner>();
+      tuner->set_noiseband(this->noiseband_);
+      tuner->set_output_positive(this->positive_output_);
+      tuner->set_output_negative(this->negative_output_);
       this->climate_->start_autotune(std::move(tuner));
     } else {
+      // Abort autotune by destroying the object in memory
       auto ptr_to_member = internal::MemberStorage<internal::AutotunerTag>::ptr;
       (this->climate_->*ptr_to_member).reset();
     }

@@ -1,6 +1,6 @@
 # ESPHome PID Autotune Status
 
-An ESPHome custom component that exposes the PID Climate autotune status and phase progress as sensors in Home Assistant. Both sensors automatically appear under the Diagnostic category with appropriate icons. It now also includes a dedicated Switch component to seamlessly start and safely abort the tuning process directly from your dashboard.
+An ESPHome custom component that exposes the PID Climate autotune status and phase progress as sensors in Home Assistant. Both sensors automatically appear under the Diagnostic category with appropriate icons. It now also includes a dedicated Switch component to seamlessly start, configure, and safely abort the tuning process directly from your dashboard.
 
 ## Usage
 
@@ -19,6 +19,11 @@ switch:
   - platform: pid_autotune
     name: "PID Autotune Switch"
     climate_id: my_pid_climate
+    # Optional parameters (defaults shown)
+    noiseband: 0.25
+    positive_output: 1.0
+    negative_output: -1.0
+    update_interval: 5s
 
 text_sensor:
   - platform: pid_autotune
@@ -35,9 +40,16 @@ sensor:
 
 ### Switch: Autotune Toggle
 The switch allows you to control the autotune process interactively:
-* **Turning On:** Triggers the climate controller's autotune function.
+* **Turning On:** Creates a new autotuner configured with your provided parameters (`noiseband`, `positive_output`, `negative_output`) and starts the tuning process.
 * **Turning Off:** Immediately aborts an active autotune by destroying the process in memory and returning the climate mode to Off, preventing the background PID from getting stuck. 
 * **Auto-Sync:** The switch automatically toggles itself to the Off position when the autotune finishes or fails, keeping your Home Assistant dashboard perfectly synchronized with the hardware state.
+
+#### Switch Configuration Variables:
+* **climate_id** (*Required*, ID): The ID of the PID climate controller to tune.
+* **noiseband** (*Optional*, float): The amplitude of noise on the sensor. The autotuner will only trigger a relay state change when the measurement exceeds this value. Defaults to `0.25`.
+* **positive_output** (*Optional*, float): The output value to apply for the heating phase during tuning. Defaults to `1.0`.
+* **negative_output** (*Optional*, float): The output value to apply for the cooling phase during tuning. Defaults to `-1.0`.
+* **update_interval** (*Optional*, Time): The interval to check the background process state to keep the switch UI in sync. Defaults to `5s`.
 
 ### Text Sensor: Status States
 The status sensor will report one of the following states to Home Assistant:
@@ -47,7 +59,7 @@ The status sensor will report one of the following states to Home Assistant:
 * **Failed**: Autotune finished, but failed to reach amplitude convergence or symmetry.
 
 ### Numeric Sensor: Phase Counter
-Tracks the `phase_count` during the autotuning process. 
+Tracks the `phase_count` during the autotuning process.
 * Returns **0** when the autotuner is Off, Finished, or Failed.
 * Increments sequentially during the **Running** state as the relay function oscillates.
 
