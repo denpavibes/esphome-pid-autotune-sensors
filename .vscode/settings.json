@@ -6,6 +6,14 @@
     "[cpp]": {
         "editor.defaultFormatter": "ms-vscode.cpptools"
     },
-    // Optional: Auto-format whenever you save a file
+    // Set Ruff as the formatter and linter for Python
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.codeActionsOnSave": {
+            "source.fixAll.ruff": "explicit",
+            "source.organizeImports.ruff": "explicit"
+        }
+    },
+    // Auto-format whenever you save a file
     "editor.formatOnSave": true
-}
+}
