@@ -204,4 +204,3 @@ class PIDAutotuneSwitch : public switch_::Switch, public PollingComponent {
 };
 
 }  // namespace esphome::pid_autotune
-

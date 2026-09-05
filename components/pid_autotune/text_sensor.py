@@ -1,7 +1,7 @@
 import esphome.codegen as cg
+import esphome.config_validation as cv
 from esphome.components import climate, text_sensor
 from esphome.components.const import CONF_CLIMATE_ID
-import esphome.config_validation as cv
 from esphome.const import ENTITY_CATEGORY_DIAGNOSTIC
 from esphome.types import ConfigType
 
