@@ -1,7 +1,9 @@
 import esphome.codegen as cg
-import esphome.config_validation as cv
 from esphome.components import climate, sensor
-from esphome.const import CONF_ID, ENTITY_CATEGORY_DIAGNOSTIC, STATE_CLASS_MEASUREMENT
+from esphome.components.const import CONF_CLIMATE_ID
+import esphome.config_validation as cv
+from esphome.const import ENTITY_CATEGORY_DIAGNOSTIC, STATE_CLASS_MEASUREMENT
+from esphome.types import ConfigType
 
 DEPENDENCIES = ["climate"]
 
@@ -13,10 +15,9 @@ PIDAutotuneSensor = pid_autotune_ns.class_(
     "PIDAutotuneSensor", sensor.Sensor, cg.PollingComponent
 )
 
-CONF_CLIMATE_ID = "climate_id"
-
 CONFIG_SCHEMA = (
     sensor.sensor_schema(
+        PIDAutotuneSensor,
         icon="mdi:counter",
         accuracy_decimals=0,
         entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
@@ -24,18 +25,16 @@ CONFIG_SCHEMA = (
     )
     .extend(
         {
-            cv.GenerateID(): cv.declare_id(PIDAutotuneSensor),
-            cv.Required(CONF_CLIMATE_ID): cv.use_id(PIDClimate),
+            cv.GenerateID(CONF_CLIMATE_ID): cv.use_id(PIDClimate),
         }
     )
     .extend(cv.polling_component_schema("5s"))
 )
 
 
-async def to_code(config):
-    var = cg.new_Pvariable(config[CONF_ID])
+async def to_code(config: ConfigType) -> None:
+    var = await sensor.new_sensor(config)
     await cg.register_component(var, config)
-    await sensor.register_sensor(var, config)
 
     climate_ = await cg.get_variable(config[CONF_CLIMATE_ID])
     cg.add(var.set_climate(climate_))

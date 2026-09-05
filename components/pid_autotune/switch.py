@@ -1,7 +1,9 @@
 import esphome.codegen as cg
-import esphome.config_validation as cv
 from esphome.components import climate, switch
+from esphome.components.const import CONF_CLIMATE_ID
+import esphome.config_validation as cv
 from esphome.const import ENTITY_CATEGORY_CONFIG
+from esphome.types import ConfigType
 
 DEPENDENCIES = ["climate"]
 
@@ -13,7 +15,6 @@ PIDAutotuneSwitch = pid_autotune_ns.class_(
     "PIDAutotuneSwitch", switch.Switch, cg.PollingComponent
 )
 
-CONF_CLIMATE_ID = "climate_id"
 CONF_NOISEBAND = "noiseband"
 CONF_POSITIVE_OUTPUT = "positive_output"
 CONF_NEGATIVE_OUTPUT = "negative_output"
@@ -26,7 +27,7 @@ CONFIG_SCHEMA = (
     )
     .extend(
         {
-            cv.Required(CONF_CLIMATE_ID): cv.use_id(PIDClimate),
+            cv.GenerateID(CONF_CLIMATE_ID): cv.use_id(PIDClimate),
             cv.Optional(CONF_NOISEBAND, default=0.25): cv.float_,
             cv.Optional(CONF_POSITIVE_OUTPUT, default=1.0): cv.float_,
             cv.Optional(CONF_NEGATIVE_OUTPUT, default=-1.0): cv.float_,
@@ -36,7 +37,7 @@ CONFIG_SCHEMA = (
 )
 
 
-async def to_code(config):
+async def to_code(config: ConfigType) -> None:
     var = await switch.new_switch(config)
     await cg.register_component(var, config)
 

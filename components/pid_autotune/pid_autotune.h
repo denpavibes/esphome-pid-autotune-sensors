@@ -1,14 +1,20 @@
 #pragma once
 
 #include <memory>
+#include <string>
+#include <utility>
+
 #include "esphome/core/component.h"
+#include "esphome/core/log.h"
 #include "esphome/components/text_sensor/text_sensor.h"
 #include "esphome/components/sensor/sensor.h"
+#include "esphome/components/switch/switch.h"
 #include "esphome/components/pid/pid_climate.h"
 #include "esphome/components/pid/pid_autotuner.h"
 
-namespace esphome {
-namespace pid_autotune {
+namespace esphome::pid_autotune {
+
+static const char *const TAG = "pid_autotune";
 
 namespace internal {
 
@@ -63,6 +69,11 @@ class PIDAutotuneTextSensor : public text_sensor::TextSensor, public PollingComp
  public:
   void set_climate(pid::PIDClimate *climate) { climate_ = climate; }
 
+  void dump_config() override {
+    LOG_TEXT_SENSOR("", "PID Autotune Status", this);
+    LOG_UPDATE_INTERVAL(this);
+  }
+
   void update() override {
     if (this->climate_ == nullptr) {
       this->mark_failed();
@@ -102,6 +113,11 @@ class PIDAutotuneSensor : public sensor::Sensor, public PollingComponent {
  public:
   void set_climate(pid::PIDClimate *climate) { climate_ = climate; }
 
+  void dump_config() override {
+    LOG_SENSOR("", "PID Autotune Phase Count", this);
+    LOG_UPDATE_INTERVAL(this);
+  }
+
   void update() override {
     if (this->climate_ == nullptr) {
       this->mark_failed();
@@ -138,6 +154,14 @@ class PIDAutotuneSwitch : public switch_::Switch, public PollingComponent {
   void set_noiseband(float noiseband) { noiseband_ = noiseband; }
   void set_positive_output(float positive_output) { positive_output_ = positive_output; }
   void set_negative_output(float negative_output) { negative_output_ = negative_output; }
+
+  void dump_config() override {
+    LOG_SWITCH("", "PID Autotune Switch", this);
+    LOG_UPDATE_INTERVAL(this);
+    ESP_LOGCONFIG(TAG, "  Noiseband: %.2f", this->noiseband_);
+    ESP_LOGCONFIG(TAG, "  Positive Output: %.2f", this->positive_output_);
+    ESP_LOGCONFIG(TAG, "  Negative Output: %.2f", this->negative_output_);
+  }
 
   void write_state(bool state) override {
     if (this->climate_ == nullptr) {
@@ -179,5 +203,5 @@ class PIDAutotuneSwitch : public switch_::Switch, public PollingComponent {
   }
 };
 
-}  // namespace pid_autotune
-}  // namespace esphome
+}  // namespace esphome::pid_autotune
+
