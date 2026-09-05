@@ -1,0 +1,11 @@
+{
+    // Set the Microsoft C/C++ extension as the formatter for C and C++
+    "[c]": {
+        "editor.defaultFormatter": "ms-vscode.cpptools"
+    },
+    "[cpp]": {
+        "editor.defaultFormatter": "ms-vscode.cpptools"
+    },
+    // Optional: Auto-format whenever you save a file
+    "editor.formatOnSave": true
+}
