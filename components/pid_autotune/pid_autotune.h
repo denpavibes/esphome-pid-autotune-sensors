@@ -17,56 +17,50 @@ struct AutotunerTag {
   using type = std::unique_ptr<pid::PIDAutotuner> pid::PIDClimate::*;
 };
 
-template <typename Tag>
-struct MemberStorage {
+template<typename Tag> struct MemberStorage {
   static typename Tag::type ptr;
 };
 
-template <typename Tag>
-typename Tag::type MemberStorage<Tag>::ptr;
+template<typename Tag> typename Tag::type MemberStorage<Tag>::ptr;
 
-template <typename Tag, typename Tag::type P>
-struct MemberExtractor {
+template<typename Tag, typename Tag::type P> struct MemberExtractor {
   struct Filler {
     Filler() { MemberStorage<Tag>::ptr = P; }
   };
   static Filler filler;
 };
 
-template <typename Tag, typename Tag::type P>
-typename MemberExtractor<Tag, P>::Filler MemberExtractor<Tag, P>::filler;
+template<typename Tag, typename Tag::type P> typename MemberExtractor<Tag, P>::Filler MemberExtractor<Tag, P>::filler;
 
 template class MemberExtractor<AutotunerTag, &pid::PIDClimate::autotuner_>;
 
-
 // --- 2. Access Bypass Trick for PIDAutotuner (not final) ---
 class AutotunerInspector : public pid::PIDAutotuner {
-public:
-  static bool is_successful(pid::PIDAutotuner* tuner) {
+ public:
+  static bool is_successful(pid::PIDAutotuner *tuner) {
     auto freq_ptr = &AutotunerInspector::frequency_detector_;
-    auto amp_ptr  = &AutotunerInspector::amplitude_detector_;
-    auto& freq = tuner->*freq_ptr;
-    auto& amp  = tuner->*amp_ptr;
+    auto amp_ptr = &AutotunerInspector::amplitude_detector_;
+    auto &freq = tuner->*freq_ptr;
+    auto &amp = tuner->*amp_ptr;
     return freq.is_increase_decrease_symmetrical() && amp.is_amplitude_convergent();
   }
 
-  static uint32_t get_phase_count(pid::PIDAutotuner* tuner) {
+  static uint32_t get_phase_count(pid::PIDAutotuner *tuner) {
     auto relay_ptr = &AutotunerInspector::relay_function_;
-    auto& relay = tuner->*relay_ptr;
+    auto &relay = tuner->*relay_ptr;
     return relay.phase_count;
   }
 };
 
 }  // namespace internal
 
-
 // --- Text Sensor: Status ---
 class PIDAutotuneTextSensor : public text_sensor::TextSensor, public PollingComponent {
-protected:
+ protected:
   pid::PIDClimate *climate_{nullptr};
   std::string last_status_{""};
 
-public:
+ public:
   void set_climate(pid::PIDClimate *climate) { climate_ = climate; }
 
   void update() override {
@@ -76,7 +70,7 @@ public:
     }
 
     std::string current_status = "Off";
-    
+
     auto ptr_to_member = internal::MemberStorage<internal::AutotunerTag>::ptr;
     auto &autotuner_ptr = this->climate_->*ptr_to_member;
     pid::PIDAutotuner *autotuner = autotuner_ptr.get();
@@ -102,10 +96,10 @@ public:
 
 // --- Numeric Sensor: Phase Counter ---
 class PIDAutotuneSensor : public sensor::Sensor, public PollingComponent {
-protected:
+ protected:
   pid::PIDClimate *climate_{nullptr};
 
-public:
+ public:
   void set_climate(pid::PIDClimate *climate) { climate_ = climate; }
 
   void update() override {
@@ -118,10 +112,10 @@ public:
     auto &autotuner_ptr = this->climate_->*ptr_to_member;
     pid::PIDAutotuner *autotuner = autotuner_ptr.get();
 
-    float current_phase = 0.0f; // Default to 0 when off/finished
+    float current_phase = 0.0f;  // Default to 0 when off/finished
 
     if (autotuner != nullptr && !autotuner->is_finished()) {
-      current_phase = (float)internal::AutotunerInspector::get_phase_count(autotuner);
+      current_phase = (float) internal::AutotunerInspector::get_phase_count(autotuner);
     }
 
     // Only publish if the state has changed
@@ -133,13 +127,13 @@ public:
 
 // --- Switch: Autotune Toggle ---
 class PIDAutotuneSwitch : public switch_::Switch, public PollingComponent {
-protected:
+ protected:
   pid::PIDClimate *climate_{nullptr};
   float noiseband_{0.25f};
   float positive_output_{1.0f};
   float negative_output_{-1.0f};
 
-public:
+ public:
   void set_climate(pid::PIDClimate *climate) { climate_ = climate; }
   void set_noiseband(float noiseband) { noiseband_ = noiseband; }
   void set_positive_output(float positive_output) { positive_output_ = positive_output; }
