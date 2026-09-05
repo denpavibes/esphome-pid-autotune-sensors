@@ -15,5 +15,14 @@
         }
     },
     // Auto-format whenever you save a file
-    "editor.formatOnSave": true
-}
+    "editor.formatOnSave": true,
+    // C++ IntelliSense include paths
+    "C_Cpp.default.includePath": [
+        "${workspaceFolder}/**",
+        "${workspaceFolder}/esphome/**"
+    ],
+    // Python analysis extra paths
+    "python.analysis.extraPaths": [
+        "${workspaceFolder}/esphome"
+    ]
+}
