@@ -1,7 +1,7 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
-from esphome.components import switch, climate
-from esphome.const import CONF_ID, ENTITY_CATEGORY_CONFIG
+from esphome.components import climate, switch
+from esphome.const import ENTITY_CATEGORY_CONFIG
 
 DEPENDENCIES = ["climate"]
 
